@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>SmartPath Pro</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --danger: #dc3545;
+            --success: #2ed573;
+            --bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            margin: 0; padding: 20px;
+            background-color: var(--bg); color: white;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden;
+            user-select: none; -webkit-user-select: none;
+        }
+        .header { margin-bottom: 20px; text-align: center; }
+        .logo { width: 80px; height: 80px; margin-bottom: 10px; border-radius: 20%; box-shadow: 0 0 20px rgba(0,123,255,0.4); }
+        
+        .status-card { 
+            background: var(--glass); backdrop-filter: blur(10px);
+            padding: 15px 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px; width: 80%; max-width: 400px;
+        }
+        #status { font-weight: bold; transition: 0.3s; }
+
+        .control-grid { 
+            display: grid; grid-template-areas: ". up ." "left stop right" ". down .";
+            gap: 15px; margin-top: auto; margin-bottom: 40px;
+        }
+        .btn { 
+            width: 80px; height: 80px; border-radius: 20px; border: none;
+            background: var(--glass); color: white; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.1s ease;
+        }
+        .btn:active, .btn.active { 
+            background: var(--primary); transform: scale(0.9);
+            box-shadow: 0 0 15px var(--primary);
+        }
+        .btn-stop { background: rgba(220, 53, 69, 0.2); border-color: var(--danger); color: var(--danger); }
+        .btn-stop:active { background: var(--danger); color: white; }
+
+        #log { 
+            font-family: 'Courier New', monospace; font-size: 11px;
+            color: #64748b; margin-top: 10px; width: 100%; text-align: center;
+        }
+        .nav-btns { display: flex; gap: 10px; margin-top: 10px; }
+        .nav-btn { background: none; border: 1px solid #334155; color: #94a3b8; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="Smartpathlogo.png" class="logo" alt="SmartPath">
+        <h1 style="margin:0; font-size: 24px;">SmartPath Pro</h1>
+    </div>
+
+    <div class="status-card">
+        <span style="color: #94a3b8; font-size: 14px;">SYSTEM STATUS</span><br>
+        <span id="status" style="color: var(--danger);">Disconnected</span>
+    </div>
+
+    <div class="nav-btns">
+        <button class="nav-btn" onclick="onConnectClick()">PAIR DEVICE</button>
+        <button class="nav-btn" onclick="location.reload()">RESET</button>
+    </div>
+
+    <div class="control-grid" id="controls" style="opacity: 0.3; pointer-events: none;">
+        <button class="btn" style="grid-area: up" ontouchstart="handlePress('F')" ontouchend="handlePress('S')">▲</button>
+        <button class="btn" style="grid-area: left" ontouchstart="handlePress('L')" ontouchend="handlePress('S')">◀</button>
+        <button class="btn btn-stop" style="grid-area: stop" onclick="handlePress('S')">■</button>
+        <button class="btn" style="grid-area: right" ontouchstart="handlePress('R')" ontouchend="handlePress('S')">▶</button>
+        <button class="btn" style="grid-area: down" ontouchstart="handlePress('B')" ontouchend="handlePress('S')">▼</button>
+    </div>
+
+    <div id="log">Ready for Bluetooth scan...</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
