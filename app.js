@@ -1,31 +1,34 @@
 const UUIDS = {
+    // Standard Serial Port Profile (SPP) UUID
     HC05_SERVICE: '00001101-0000-1000-8000-00805f9b34fb',
+    // Common JDY/BLE Service
     JDY16_SERVICE: '0000ffe0-0000-1000-8000-00805f9b34fb'
 };
 
 let bluetoothDevice;
 let smartPathCharacteristic;
 
-// Wrap command sending with haptic feedback
-async function handlePress(cmd) {
-    if (window.navigator.vibrate) window.navigator.vibrate(50); // Vibrate on press
-    await sendCmd(cmd);
-}
-
+// This function MUST be triggered by a button click
 async function onConnectClick() {
     try {
-        updateLog("Searching for SmartPath...");
+        updateLog("Requesting Bluetooth Scan...");
+        
+        // Broadening filters to find more devices
         bluetoothDevice = await navigator.bluetooth.requestDevice({
-            filters: [{ services: [UUIDS.HC05_SERVICE] }, { services: [UUIDS.JDY16_SERVICE] }],
+            // acceptAllDevices: true, // Optional: Use this if filters fail
+            filters: [
+                { services: [UUIDS.HC05_SERVICE] },
+                { services: [UUIDS.JDY16_SERVICE] }
+            ],
             optionalServices: [UUIDS.HC05_SERVICE, UUIDS.JDY16_SERVICE]
         });
 
+        updateLog("Device Selected. Connecting...");
         bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
-
+        
         const server = await bluetoothDevice.gatt.connect();
-        updateLog("Authenticated. Mapping services...");
+        updateLog("GATT Connected. Finding Service...");
 
-        // Try HC-05 then JDY-16
         let service;
         try {
             service = await server.getPrimaryService(UUIDS.HC05_SERVICE);
@@ -34,43 +37,53 @@ async function onConnectClick() {
         }
 
         const characteristics = await service.getCharacteristics();
-        smartPathCharacteristic = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse);
+        // Automatically find the characteristic that allows writing
+        smartPathCharacteristic = characteristics.find(c => 
+            c.properties.write || c.properties.writeWithoutResponse
+        );
 
-        if (!smartPathCharacteristic) throw new Error("Hardware Link Failed.");
+        if (!smartPathCharacteristic) throw new Error("No write path found.");
 
-        // UI Success State
+        // UI Updates
         document.getElementById('status').innerText = "LINK ACTIVE";
         document.getElementById('status').style.color = "#2ed573";
         document.getElementById('controls').style.opacity = "1";
         document.getElementById('controls').style.pointerEvents = "auto";
-        updateLog(`Control assigned to ${bluetoothDevice.name}`);
+        updateLog("System Ready!");
 
     } catch (error) {
-        updateLog("Error: " + error.message);
+        updateLog("System Error: " + error.message);
+        console.log(error);
     }
 }
 
-function onDisconnected() {
-    document.getElementById('status').innerText = "CONNECTION LOST";
-    document.getElementById('status').style.color = "#dc3545";
-    document.getElementById('controls').style.opacity = "0.3";
-    document.getElementById('controls').style.pointerEvents = "none";
+async function handlePress(cmd) {
+    if (window.navigator.vibrate) window.navigator.vibrate(50);
+    await sendCmd(cmd);
 }
 
 async function sendCmd(command) {
     if (!smartPathCharacteristic) return;
     try {
-        await smartPathCharacteristic.writeValue(new TextEncoder().encode(command));
+        const data = new TextEncoder().encode(command);
+        await smartPathCharacteristic.writeValue(data);
     } catch (error) {
-        console.error("Command failed");
+        console.error("Send failed");
     }
 }
 
-function updateLog(msg) {
-    document.getElementById('log').innerText = "LOG: " + msg.toUpperCase();
+function onDisconnected() {
+    document.getElementById('status').innerText = "LINK LOST";
+    document.getElementById('status').style.color = "#dc3545";
+    document.getElementById('controls').style.opacity = "0.3";
+    document.getElementById('controls').style.pointerEvents = "none";
 }
 
-// Service Worker for PWA
+function updateLog(msg) {
+    document.getElementById('log').innerText = "CONSOLE: " + msg.toUpperCase();
+}
+
+// Service Worker Registration
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
 }
